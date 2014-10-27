@@ -636,8 +636,8 @@ volatile unsigned char tmp=0;
         L01_FlushTX( );
         L01_WriteTXPayload_Ack(testbuffer,5);//(INT8U*)"len", strlen( "len" )
         L01_CE_HIGH( );	// CE = 1,启动发射
-		
-	   while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
+		_delay_ms(10);
+	   //while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
 		L01_CE_LOW( );
 
 

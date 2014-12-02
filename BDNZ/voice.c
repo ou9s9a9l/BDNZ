@@ -308,6 +308,63 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 
 	
  }
+ void add1(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
+{
+	
+	volatile unsigned int dat=0;
+	Cdata1=FORMAT(Data1);
+	Cdata2=FORMAT(Data2);
+	dat=Ident*8-31;
+	
+	if(Cdat1_7>Cdat2_7&&!find(rdata3,dat+0))
+	{rdata3[Quest_len_int(rdata3)]=dat+0;
+	//if(find(rdata2,(dat+0))&&(!find(rdata4,(dat+0))))addto4_last(dat+0);
+	}
+	if(Cdat1_6>Cdat2_6&&!find(rdata3,dat+1))
+	{rdata3[Quest_len_int(rdata3)]=dat+1;
+	}
+	if(Cdat1_5>Cdat2_5&&!find(rdata3,dat+2))
+	{rdata3[Quest_len_int(rdata3)]=dat+2;
+	//if(find(rdata2,(dat+2))&&(!find(rdata4,(dat+2))))addto4_last(dat+2);
+	}
+
+	if(Cdat1_4>Cdat2_4&&!find(rdata3,dat+3))
+	{rdata3[Quest_len_int(rdata3)]=dat+3;
+	}
+	
+
+	
+	if(Cdat1_3>Cdat2_3&&!find(rdata3,dat+4))
+	{rdata3[Quest_len_int(rdata3)]=dat+4;
+	//if(find(rdata2,(dat+4))&&(!find(rdata4,(dat+4))))addto4_last(dat+4);
+	}
+	
+
+	if(Cdat1_2>Cdat2_2&&!find(rdata3,dat+5))
+	{rdata3[Quest_len_int(rdata3)]=dat+5;
+	}
+	
+	
+	if(Cdat1_1>Cdat2_1&&!find(rdata3,dat+6))
+	{rdata3[Quest_len_int(rdata3)]=dat+6;
+	//if(find(rdata2,(dat+6))&&(!find(rdata4,(dat+6))))addto4_last(dat+6);
+	}
+	if(Cdat1_0>Cdat2_0&&!find(rdata3,dat+7))
+	{rdata3[Quest_len_int(rdata3)]=dat+7;
+	}
+	
+
+	if(Cdat1_0<Cdat2_0){cut((dat+7));}
+	if(Cdat1_1<Cdat2_1){cut((dat+6));}
+	if(Cdat1_2<Cdat2_2){cut((dat+5));}
+	if(Cdat1_3<Cdat2_3){cut((dat+4));}
+	if(Cdat1_4<Cdat2_4){cut((dat+3));}
+	if(Cdat1_5<Cdat2_5){cut((dat+2));}
+	if(Cdat1_6<Cdat2_6){cut((dat+1));}
+	if(Cdat1_7<Cdat2_7){cut((dat+0));}
+
+	
+ }
 
 void addto4(unsigned int Num)
 {
@@ -330,7 +387,8 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 		for (int d=0;d<collectlen;d++)
 		for (a=start1[d]+4;a<last1[d]+4;a++)
 		{
-		add(rdata1[a],rdata[a],a);                             //´¦Àí³ÌĞò
+		//add(rdata1[a],rdata[a],a);                             //´¦Àí³ÌĞò2010
+		add1(rdata1[a],rdata[a],a);							   //´¦Àí³ÌĞò2006
 		}
 		
 	for(a=0;a<size;a++)
@@ -675,13 +733,20 @@ unsigned char DoWithTiaoJian(unsigned int *rdat)//×ó1ÓÒ0
 			for (c=0;c<150;c++)
 				if (x_middle[a][b]==rdat[c]&&x_middle[a][b]!=0)//reserveÌõ¼ş³ÉÁ¢
 					{
-					if(b==0&&find(rdata3,x_left[a][0])&&find(rdata3,x_left[a][1])&&find(rdata3,x_left[a][2])&&find(rdata3,x_left[a][3])&&find(rdata3,x_left[a][4])&&find(rdata3,x_left[a][5])&&find(rdata3,x_left[a][6]))//reserver×ó±ßÅĞ¶Ï
+					if(b==0&&find(rdata3,x_left[a][0])&&find(rdata3,x_left[a][1])&&find(rdata3,x_left[a][2])
+					&&find(rdata3,x_left[a][3])&&find(rdata3,x_left[a][4])&&find(rdata3,x_left[a][5])
+					&&(find(rdata3,x_left[a][6])||find(rdata3,x_left[a][7])))//reserver×ó±ßÅĞ¶Ï
+					
 					{DoWithArray[DoWithCount++]=x_middle[a][b];
 					DoWithArray[DoWithCount++]=a;}
-					else 
-					if(b==1&&find(rdata3,x_right[a][0])&&find(rdata3,x_right[a][1])&&find(rdata3,x_right[a][2])&&find(rdata3,x_right[a][3])&&find(rdata3,x_right[a][4])&&find(rdata3,x_right[a][5]))//reserverÓÖ±ßÅĞ¶Ï
+					
+					else if(b==1&&find(rdata3,x_right[a][0])&&find(rdata3,x_right[a][1])&&find(rdata3,x_right[a][2])
+					&&find(rdata3,x_right[a][3])&&find(rdata3,x_right[a][4])&&find(rdata3,x_right[a][5])
+					&&(find(rdata3,x_right[a][6])||find(rdata3,x_right[a][7])))//reserverÓÖ±ßÅĞ¶Ï
+					
 					{DoWithArray[DoWithCount++]=x_middle[a][b];
 					DoWithArray[DoWithCount++]=a;}
+					
 					if (b!=0&&b!=1)//reserverÆäËûÅĞ¶Ï£¨Õı¹ì£©
 					{
 					DoWithArray[DoWithCount++]=x_middle[a][b];
@@ -926,7 +991,8 @@ while(o_count<CON2_LENGTH)
 				
 					for (e=0;e<CON2_LENGTH;e++)
 					{
-						if(find(rdata3,conditon2[e][0])&&find(rdata3,conditon2[e][1])&&find(rdata3,conditon2[e][2])&&e%2==1&&factor[e].what==0)
+						if(find(rdata3,conditon2[e][0])&&find(rdata3,conditon2[e][1])
+						 &&find(rdata3,conditon2[e][2])&&e%2==1&&factor[e].what==0)
 						factor[e]=factor[o_count];
 					}
 					for (e=0;e<CON2_LENGTH;e++)
@@ -978,14 +1044,9 @@ int main(void)
 	USART1_Init();
 	L01_CE_LOW( );
 	L01_Init();
-	L01_SetTRMode( TX_MODE );
+	L01_SetTRMode(RX_MODE );
 	L01_WriteHoppingPoint( 0 );
-	_delay_ms(5000);
-	uart_sendB1(0xff);
-	uart_sendB1(0x11);
-	uart_sendB1(0x12);
-	uart_sendB1(0x13);
-	uart_sendB1(0xff);
+
 /*	LED_ON
 	if (EEPROM_read(1)==0xFF)
 	_delay_ms(1000);

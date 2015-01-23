@@ -16,14 +16,14 @@
 #include <AVR/sleep.h>
 #include <avr/wdt.h> 
 #include "nRF24L01.h"
-#include "voice.h"
+#include "voicepnz.h"
 //#include "nRF24L01_Reg.h"
 #include "macr.h"
 //#include "nRF24L01.h"
 unsigned char *p;//flag
 unsigned char *j=((unsigned char *)0x000800);//Êı¾İ´æ´¢Î»ÖÃ
 
-
+unsigned int resflag=0;
 
 #ifndef F_CPU
 #define F_CPU 8000000
@@ -119,21 +119,36 @@ void Uart_SendString(unsigned char *data)
 //¶¨Ê±Æ÷³õÊ¼»¯
 
 //´®¿Ú³õÊ¼»¯
+/*
 void USART0_Init( void )
 {
      UBRR0L=16;         //8m 51 1m  12 4800   8888 16ÊÇ2xÇé¿öÏÂ57600
 	 UCSR0A =(1<<U2X0);         
      UCSR0B = (1<<RXEN0)|(1<<TXEN0); 
 	 UCSR0C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
+}*/
+void USART0_Init( void )
+{
+	UBRR0L=11;         //8m 51 1m  12 4800   8888 16ÊÇ2xÇé¿öÏÂ57600
+	UCSR0A =(1<<U2X0);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	UCSR0C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
 }
-void USART1_Init( void )
+/*
+void USART1_Init( void )//wifi
 {
 	UBRR1L=51;         //8m 51 1m  12 4800   8888 16ÊÇ2xÇé¿öÏÂ57600
 	UCSR1A =(1<<U2X1);
 	UCSR1B = (1<<RXEN1)|(1<<TXEN1);
 	UCSR1C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
+}*/
+void USART1_Init( void )//wifi
+{
+	UBRR1L=11;         //8m 51 1m  12 4800   8888 16ÊÇ2xÇé¿öÏÂ57600
+	UCSR1A =(1<<U2X1);
+	UCSR1B = (1<<RXEN1)|(1<<TXEN1);
+	UCSR1C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
 }
-
 ///////////////////////////////////////½ÓÊÕ²¢´¢´æµ½ramÀï//////////////////////////////////////////////////////////
 void input_usart()
 {
@@ -259,11 +274,11 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 	volatile unsigned int dat=0;
 	Cdata1=FORMAT(Data1);
 	Cdata2=FORMAT(Data2);
-	dat=Ident*8-31;
+	dat=Ident*8-Startcharlen*8+1;//4*8-1
 	if(Cdat1_0>Cdat2_0&&!find(rdata3,dat+0))
 	{rdata3[Quest_len_int(rdata3)]=dat+0;
 	}
-
+	
 	if(Cdat1_1>Cdat2_1&&!find(rdata3,dat+1))
 	{rdata3[Quest_len_int(rdata3)]=dat+1;
 	//if(find(rdata2,(dat+6))&&(!find(rdata4,(dat+6))))addto4_last(dat+6);
@@ -296,15 +311,15 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 	{rdata3[Quest_len_int(rdata3)]=dat+7;
 	//if(find(rdata2,(dat+0))&&(!find(rdata4,(dat+0))))addto4_last(dat+0);
 	}
-
-	if(Cdat1_0<Cdat2_0){cut((dat+0));}
-	if(Cdat1_1<Cdat2_1){cut((dat+1));}
-	if(Cdat1_2<Cdat2_2){cut((dat+2));}
-	if(Cdat1_3<Cdat2_3){cut((dat+3));}
-	if(Cdat1_4<Cdat2_4){cut((dat+4));}
-	if(Cdat1_5<Cdat2_5){cut((dat+5));}
-	if(Cdat1_6<Cdat2_6){cut((dat+6));}
-	if(Cdat1_7<Cdat2_7){cut((dat+7));}
+	
+	if(Cdat1_0<Cdat2_0||Cdat1_0==0){cut((dat+0));}
+	if(Cdat1_1<Cdat2_1||Cdat1_1==0){cut((dat+1));}
+	if(Cdat1_2<Cdat2_2||Cdat1_2==0){cut((dat+2));}
+	if(Cdat1_3<Cdat2_3||Cdat1_3==0){cut((dat+3));}
+	if(Cdat1_4<Cdat2_4||Cdat1_4==0){cut((dat+4));}
+	if(Cdat1_5<Cdat2_5||Cdat1_5==0){cut((dat+5));}
+	if(Cdat1_6<Cdat2_6||Cdat1_6==0){cut((dat+6));}
+	if(Cdat1_7<Cdat2_7||Cdat1_7==0){cut((dat+7));}
 
 	
  }
@@ -314,7 +329,7 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 	volatile unsigned int dat=0;
 	Cdata1=FORMAT(Data1);
 	Cdata2=FORMAT(Data2);
-	dat=Ident*8-31;
+	dat=Ident*8-Startcharlen*8+1;//4*8-1
 	
 	if(Cdat1_7>Cdat2_7&&!find(rdata3,dat+0))
 	{rdata3[Quest_len_int(rdata3)]=dat+0;
@@ -385,10 +400,13 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 		}
 		rdata4[41]=133;
 		for (int d=0;d<collectlen;d++)
-		for (a=start1[d]+4;a<last1[d]+4;a++)
+		for (a=start1[d]+Startcharlen;a<last1[d]+Startcharlen;a++)
 		{
-		//add(rdata1[a],rdata[a],a);                             //´¦Àí³ÌĞò2010
+	#if SELECT==2010
+		add(rdata1[a],rdata[a],a); 
+	#else if SELECT==2006                          //´¦Àí³ÌĞò2010
 		add1(rdata1[a],rdata[a],a);							   //´¦Àí³ÌĞò2006
+	#endif
 		}
 		
 	for(a=0;a<size;a++)
@@ -505,6 +523,9 @@ void sendcast(void)
 	if(Bcast[0][0]!=0)qingling(Bcast[0],3);
 	m_count++;m_freedelay++;
 	if(m_count<10)return;
+	if(rdata1[0]==0)
+	for(int a=0;a<6;a++)//¿ªÊ¼1·ÖÖÓ²»±¨
+	{Bcast[a][0]=0;Bcast[a][1]=0;Bcast[a][2]=0;}
 	if (m_freedelay>60)
 		{
 			add2Bcast(0,0,254);//Õı¶¨ 3·ÖÖÓÒ»´Î
@@ -520,11 +541,12 @@ void sendcast(void)
 	_delay_ms(10);
 	if(b)
 	{
-	uart_sendB1(0xff);
+	if(!resflag)
+	{uart_sendB1(0xff);
 	uart_sendB1(Bcast[5][0]);
 	uart_sendB1(Bcast[5][1]);
 	uart_sendB1(Bcast[5][2]);
-	uart_sendB1(0xff);	
+	uart_sendB1(0xff);	}
 	uart_sendB(Bcast[5][0]);
 	uart_sendB(Bcast[5][1]);
 	uart_sendB(Bcast[5][2]);
@@ -551,7 +573,7 @@ void Timer_Init(void)
 	TCCR1B=0x05;// 1024  5devide
 	TCNT1H = 0x00;
 	TCNT1L = 0x00;
-	TIMSK1=0x00;//1¿ªÆôÖĞ¶Ï
+	TIMSK1=0x01;//1¿ªÆôÖĞ¶Ï
 	sei();
 }
 void setsleep(void)
@@ -560,7 +582,25 @@ void setsleep(void)
 }
 ISR(TIMER1_OVF_vect)
 {
-	hei[2]=1;	
+	if (READ_PA3==0)
+	_PA3=1;
+	else 
+	_PA3=0;
+	uart_sendB1(0x33);
+	//resflag++;
+	//ÖØÆôÎŞÏßÄ£¿é
+}
+
+ISR(USART1_RX_vect)
+{	
+	volatile int temp,a=0,b=0;
+	
+	if(UCSR1A & (1<<RXC1))
+	temp=UDR1;
+	if(temp==0x30)wdt_enable(WDTO_8S);
+	if(temp==0x33)
+	if(resflag==1)resflag=0;//wdt_reset();
+	else resflag=1;
 }
 int rxflag=0,succflag=0,count=0,resetflag=0;
 ISR(USART0_RX_vect)
@@ -603,13 +643,19 @@ ISR(USART0_RX_vect)
 	 {
 		
 	int c=0;
+	if (count==13)
+	{for (a=14;a>2;a--)
+	rdatatemp[a]=rdatatemp[a-1];rdatatemp[2]=0x04;count++;}
+	if (count==287)
+	{for (a=288;a>2;a--)
+	rdatatemp[a]=rdatatemp[a-1];rdatatemp[2]=0x16;count++;}
 		  m_save=CRC(rdatatemp,count-2);
 		  m_crc=rdatatemp[count-2];
 		  m_crc<<=8;
 		  m_crc|=rdatatemp[count-1];
 		  if(m_save!=m_crc||m_crc==0)
 		  {
-			
+			hei[0]=m_crc;
 			  for (a=0;a<=count;a++)
 			  rdatatemp[a]=0;
 			  hei[0]=m_crc;
@@ -622,7 +668,7 @@ ISR(USART0_RX_vect)
 		for (b=0;b<cachelen;b++)
 		{
 			if(rdatacache[b][0]==0)
-			for (int a=0;a<15;a++)
+			for (int a=0;a<cachelen1;a++)
 			{{
 				rdatacache[b][a]=rdata[a];
 			}c=1;}
@@ -636,24 +682,24 @@ ISR(USART0_RX_vect)
 		 }
 		 
 		 }
-		 
-		 
 		 else{
 		 if(rdata[0]==0)
-		 for ( a=0;a<=count;a++)
+		for ( a=0;a<=count;a++)
 		 {
 			 rdata[a]=rdatatemp[a];
 		 }
-		for (b=0;b<cachelen;b++)
+		 for (b=0;b<cachelen;b++)
 		{
 			if(rdatacache[b][0]==0)
-			for (int a=0;a<15;a++)
+			for (int a=0;a<cachelen1;a++)
 			{{
 				rdatacache[b][a]=rdatatemp[a];
 			}c=1;}
-			if (c==1){/*uart_sendB(b);*/break;}
+			if (c==1){break;}
 		}
 		 }		    	
+		
+		
 		 /*else if(rdatacache[0][0]==0)
 		 for (int a=0;a<15;a++)
 		 {
@@ -791,11 +837,11 @@ int ddd=0;
 void rx12(void)
 {
 	volatile unsigned int a,b=0,c=0,tempNum;
-	for (a=0;a<rdata[4];a++)
+	for (a=0;a<rdata[Startcharlen];a++)
 	{
 		c=0;
-		tempNum=rdata[a*2+6];
-		tempNum|=rdata[a*2+7]<<8;
+		tempNum=rdata[a*2+Startcharlen+2];//10
+		tempNum|=rdata[a*2+Startcharlen+3]<<8;
 		for (int d=0;d<collectlen;d++)
 		 if((tempNum&0x0fff)>start12[d]&&(tempNum&0x0fff)<last12[d])
 				{
@@ -845,7 +891,7 @@ void searchF(void)
 	}
 	for (a=0;a<80;a++)
 	DoWithArray[a]=0;
-	for (a=0;a<20;a++)
+	for (a=0;a<8;a++)
 	{DoWithS[a].howmany=0;DoWithS[a].what=0;}
 	DoWithTiaoJian(rdata3);
 while(o_count<CON2_LENGTH)
@@ -874,9 +920,9 @@ while(o_count<CON2_LENGTH)
 			{
 			d=0;
 			tempa=0;
-			if(factor[o_count].what)// ±ßÉÏ°×É«ÓĞÁË¾Í²»³É¹¦
+			if(factor[o_count].what)// ÖĞ¼ä°×É«ÓĞÁË¾Í²»³É¹¦
 				{d=1;}//¹ìµÀ±ß
-		/*	if (tempb==5&&0==d)//5µÄÊ±ºòÓÃÀ´Ğ´Á½±ßµÄÁ½¸ö
+		  /*if (tempb==5&&0==d)//5µÄÊ±ºòÓÃÀ´Ğ´Á½±ßµÄÁ½¸ö
 			{
 				//factor[o_count].howmany=tempb;
 				//factor[o_count].what=tempc;
@@ -889,7 +935,7 @@ while(o_count<CON2_LENGTH)
 			if(DoWithS[a].what!=0)//5 4 ²»³É¹¦  4  5 ³É¹¦
 			{for (c=0;c<20;c++)
 				if(DoWithS[a].what==factor[c].what)
-					if(DoWithS[a].howmany<=factor[c].howmany
+					if(DoWithS[a].howmany<=factor[c].howmany//4<5
 					||(5==factor[c].howmany&&7==DoWithS[a].howmany))d=1;//¹ìµÀÖĞ±¨Íê5±¨7
 			}
 			else d==1;
@@ -901,15 +947,13 @@ while(o_count<CON2_LENGTH)
 			}*/			
 				if(d==0&&DoWithS[a].howmany!=0)
  				{
-				if (o_count==1||o_count==3)temp=0;/********/
-				else temp=1;
-				if (0==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_left[DoWithS[a].what][0])
-				&&find(rdata3,x_left[DoWithS[a].what][1]))
-				{
 				
-				if(!find(rdata3,signal[1])||o_count!=1||(DoWithS[a].howmany==5&&!find(rdata3,signal[3])))//·ÇºìµÆ
-					{
-	
+				if (conditon2[o_count][3]==0&&DoWithS[a].howmany!=6)
+				{
+				//        ²»ÁÁÔòÍ¨¹ı                    //
+			//	if(find(rdata3,signal[1])&&o_count==1&&(DoWithS[a].howmany!=5||find(rdata3,signal[3])))//·ÇºìµÆ//µ÷³µ
+			//  if(!find(rdata3,signal[3])||o_count!=3||(DoWithS[a].howmany==5&&!find(rdata3,signal[1])))//·ÇºìµÆ
+				//	{
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
 						bcastnum=a;
@@ -923,7 +967,7 @@ while(o_count<CON2_LENGTH)
 						else if(DoWithS[a].howmany==4)
 						tempa+=20;
 						else if(DoWithS[a].howmany==5)
-							if(o_count==1)
+							if(o_count<=CON2_DEVIDE)
 							tempa+=40;
 							else
 							tempa+=140;
@@ -932,7 +976,7 @@ while(o_count<CON2_LENGTH)
 						
 						//tempa+=50;
 					
-						if(DoWithS[a].howmany==4||(DoWithS[a].howmany==5&&o_count==1))
+						if(tempa<=100/*&&o_count==1*/)
 						add2Bcast(tempa,0,253);//131Å®
 						else
 						add2Bcast(tempa,0,254);//ÄĞ
@@ -942,7 +986,8 @@ while(o_count<CON2_LENGTH)
 						
 							for (e=0;e<CON2_LENGTH;e++)
 							{
-							if(find(rdata3,conditon2[e][0])&&find(rdata3,conditon2[e][1])&&find(rdata3,conditon2[e][2])&&e%2==0&&factor[e].what==0)
+							if(find(rdata3,conditon2[e][0])&&find(rdata3,conditon2[e][1])
+							&&find(rdata3,conditon2[e][2])&&conditon2[e][3]==1&&factor[e].what==0)
 							factor[e]=factor[o_count];
 							}
 							for (e=0;e<CON2_LENGTH;e++)
@@ -951,16 +996,15 @@ while(o_count<CON2_LENGTH)
 								factor[e].howmany=factor[o_count].howmany;
 							}
 				
-					}
+					//}
 				}
-				if (1==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_right[DoWithS[a].what][0])
-				&&find(rdata3,x_right[DoWithS[a].what][1]))
+				if (conditon2[o_count][3]==1&&DoWithS[a].howmany!=6)
 				{
 				//		4 1 1	5 1 0	3 1 0
 				//		4 2 0	5 2 1	3 2 1
 				
-				if(!find(rdata3,signal[3])||o_count!=3||(DoWithS[a].howmany==5&&!find(rdata3,signal[1])))//·ÇºìµÆ
-					{
+				//if(!find(rdata3,signal[3])||o_count!=3||(DoWithS[a].howmany==5&&!find(rdata3,signal[1])))//·ÇºìµÆ
+				//	{
 					
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
@@ -974,17 +1018,17 @@ while(o_count<CON2_LENGTH)
 						else if(DoWithS[a].howmany==4)
 						tempa+=120;
 						else if(DoWithS[a].howmany==5)
-						if(o_count==2)
+						if(o_count<=CON2_DEVIDE)
 						tempa+=140;
 						else						
 						tempa+=40;
 						
 						tempa+=DoWithS[a].what;
 					
-						if(DoWithS[a].howmany==4||(DoWithS[a].howmany==5&&o_count==2))
-						add2Bcast(tempa,0,254);//¸Ä³É131
+						if(tempa<=100/*&&o_count==2*/)
+						add2Bcast(tempa,0,253);//¸Ä³É131
 						else 
-						add2Bcast(tempa,0,253);
+						add2Bcast(tempa,0,254);
 						uart_sendB(tempa);
 						uart_sendB(0xFF);
 						factor[o_count]=DoWithS[a];
@@ -992,7 +1036,7 @@ while(o_count<CON2_LENGTH)
 					for (e=0;e<CON2_LENGTH;e++)
 					{
 						if(find(rdata3,conditon2[e][0])&&find(rdata3,conditon2[e][1])
-						 &&find(rdata3,conditon2[e][2])&&e%2==1&&factor[e].what==0)
+						 &&find(rdata3,conditon2[e][2])&&conditon2[e][3]==0&&factor[e].what==0)
 						factor[e]=factor[o_count];
 					}
 					for (e=0;e<CON2_LENGTH;e++)
@@ -1000,7 +1044,7 @@ while(o_count<CON2_LENGTH)
 						if(factor[e].what==factor[o_count].what)
 						factor[e].howmany=factor[o_count].howmany;
 					}
-					}
+					//}
 				}
 				}	
 			}						
@@ -1020,6 +1064,7 @@ while(o_count<CON2_LENGTH)
 
 ////////////////////////////////////////////////////////////////
 
+
 //////////////////////////////////////////
 //                                      //
 //                main                  //
@@ -1033,6 +1078,8 @@ void get_mcusr(void)
 unsigned char rxbuffer[32];
 int main(void)
 { 
+	
+	
 	volatile unsigned int a,b=0,c=0,d=0,e;
 	volatile unsigned char temp;
 	get_mcusr();
@@ -1044,7 +1091,7 @@ int main(void)
 	USART1_Init();
 	L01_CE_LOW( );
 	L01_Init();
-	L01_SetTRMode(RX_MODE );
+	L01_SetTRMode(TX_MODE );
 	L01_WriteHoppingPoint( 0 );
 
 /*	LED_ON
@@ -1057,8 +1104,9 @@ int main(void)
 	EEPROM_write(e,0xff);
 	}*/
   	LED_OFF
-	uart_sendB(0x64);
+
 //	str_send(luxj);
+	
 	#if TEST==3
 	while(1)
 	rxdata();
@@ -1098,11 +1146,21 @@ int main(void)
 		//while(1);
 	}*/
 UCSR0B |=(1<<RXCIE0);
+UCSR1B |=(1<<RXCIE1);
 LED_TWINKEL
 hei[1]=head;
+_PB0=1;
 b=send_int(0,0,254);
+_delay_ms(7000);
+b=send_int(0,0,253);
+uart_sendB1(0x33);
+uart_sendB1(0x33);
      while(1)
  {
+	 if(rdata[1]==0x12)
+	 rx0x12=0;
+	 if(rdata[1]==0x11)
+	 rx0x11=0;
 	/*if (factor[1].what!=2)
 	{
 		factor[1].what=2;
@@ -1118,10 +1176,10 @@ b=send_int(0,0,254);
 	}
 	if (rdatacache[0][0]!=0&&rdata[0]==0)
 	{
-		for(a=0;a<15;a++)
+		for(a=0;a<cachelen1;a++)
 		rdata[a]=rdatacache[0][a];
 		for(b=0;b<cachelen;b++)
-		for(a=0;a<15;a++)
+		for(a=0;a<cachelen1;a++)
 		rdatacache[b][a]=rdatacache[b+1][a];
 		rx0x12=0;
 		/*

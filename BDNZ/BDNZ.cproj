@@ -175,7 +175,10 @@
     <Compile Include="voice.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="voice.h">
+    <Compile Include="voicepnz.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="voicesj.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

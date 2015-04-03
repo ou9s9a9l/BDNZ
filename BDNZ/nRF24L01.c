@@ -632,13 +632,17 @@ volatile unsigned char tmp=0;
 	  testbuffer[0]=Num1 ;
 	  testbuffer[1]=Num2 ;
 	  testbuffer[2]=Num3 ;
+	  L01_CE_LOW( );
+	  L01_Init();
+	  L01_SetTRMode(TX_MODE );
+	  L01_WriteHoppingPoint( 0 );
 		L01_FlushRX( );
         L01_FlushTX( );
         L01_WriteTXPayload_Ack(testbuffer,5);//(INT8U*)"len", strlen( "len" )
         L01_CE_HIGH( );	// CE = 1,启动发射
 		_delay_ms(10);
 	   //while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
-		L01_CE_LOW( );
+
 
 
 	 if( tmp & ( 1<<MASK_TX_DS ) )

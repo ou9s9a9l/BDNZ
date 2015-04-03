@@ -16,7 +16,7 @@
 #include <AVR/sleep.h>
 #include <avr/wdt.h> 
 #include "nRF24L01.h"
-#include "voicepnz.h"
+#include "voicebdn.h"
 //#include "nRF24L01_Reg.h"
 #include "macr.h"
 //#include "nRF24L01.h"
@@ -580,13 +580,19 @@ void setsleep(void)
 {
 	SMCR|=(1<<SE);	
 }
+int signalflag = 0;
 ISR(TIMER1_OVF_vect)
 {
 	if (READ_PA3==0)
 	_PA3=1;
 	else 
 	_PA3=0;
+	if(signalflag == 1)
+	{uart_sendB1(0x33);
+	_delay_ms(1000);}
 	uart_sendB1(0x33);
+	signalflag=1;
+	
 	//resflag++;
 	//重启无线模块
 }
@@ -610,7 +616,7 @@ ISR(USART0_RX_vect)
 	if(UCSR0A & (1<<RXC0))
 	temp=UDR0;
 	if(temp==0x01)succflag=1;
-	
+	signalflag=0;
 //	if(resetflag==1)
 //	if(temp==0x0A)
 //	wdt_enable(WDTO_15MS);//使能看门狗定时器，溢出时间设置为1秒
@@ -977,7 +983,7 @@ while(o_count<CON2_LENGTH)
 						//tempa+=50;
 					
 						if(tempa<=100/*&&o_count==1*/)
-						add2Bcast(tempa,0,253);//131女
+						add2Bcast(tempa,0,253);//女
 						else
 						add2Bcast(tempa,0,254);//男
 						uart_sendB(tempa);
@@ -1153,6 +1159,9 @@ _PB0=1;
 b=send_int(0,0,254);
 _delay_ms(7000);
 b=send_int(0,0,253);
+_delay_ms(7000);
+
+
 uart_sendB1(0x33);
 uart_sendB1(0x33);
      while(1)

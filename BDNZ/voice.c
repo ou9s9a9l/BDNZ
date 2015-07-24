@@ -52,8 +52,8 @@ BYTEBIT  Cdata1,Cdata2;
 	#define Cdat2_6   Cdata2.BIT6
 	#define Cdat2_7   Cdata2.BIT7
 //#endif
-#define LED_OFF  _PA3=1;
-#define LED_ON  _PA3=0;
+#define LED_OFF  _PA1=1;//pa0 green pa1 blue
+#define LED_ON  _PA1=0;
 #define LED_TWINKEL {LED_ON;_delay_ms(1000);LED_OFF;_delay_ms(1000);}
 int hei[3]; 
 unsigned int m_freedelay=0;					////k是rdata3里面的条件数//x代表rdata123的第几个 //n代表与条件 如果是1则成立h为已经成立条件数
@@ -64,7 +64,7 @@ volatile char rdata1[size]={0};
 volatile char rdatatemp[size]={0};
 volatile unsigned int DoWithArray[80]={0};
 //unsigned int rdata2[11]={115,117,119,121,123,125,127,129,131,133};
-volatile unsigned int rdata3[150]={0};
+volatile unsigned int rdata3[250]={0};
 unsigned int rdata4[DELAY];
 unsigned char Bcast[6][3];
 
@@ -129,7 +129,11 @@ void USART0_Init( void )
 }*/
 void USART0_Init( void )
 {
+	#ifdef USART0_SPEED
+	UBRR0L = USART0_SPEED;
+	#else
 	UBRR0L=11;         //8m 51 1m  12 4800   8888 16是2x情况下57600
+	#endif
 	UCSR0A =(1<<U2X0);
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
 	UCSR0C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
@@ -218,6 +222,18 @@ return b;
 }
 //Cdata1,Cdata2;
 //0xff查询长度
+unsigned char find(unsigned int *rdat,unsigned int source)
+{
+	unsigned char b=0,temp;
+	temp=Quest_len_int(rdat);
+	if (rdat[DELAY-9]!=0&&0==temp)
+	temp=DELAY-1;
+	for (unsigned char a=0;a<=temp;a++)
+	{if(rdat[a]==source)return 1;}
+	
+	return 0;
+}
+
 void cut(unsigned int Num)
 {
 volatile unsigned char a,b,c,temp_len,count=0;
@@ -242,10 +258,13 @@ while(count<CON2_LENGTH)
 		}
 	count++;
 	}
-	for(c=0;c<DELAY-10;c++)
-	{
+
+	
+	for(c=0;c<DELAY;c++)
+	{rdata4[DELAY]=0;
 	if(Num==rdata4[c])
-		rdata4[c]=0;
+		for(a=c;a<DELAY-1;a++)
+		 rdata4[a]=rdata4[a+1];
 	}
 
 /*	for(c=DELAY-9;c<DELAY;c++)
@@ -256,17 +275,7 @@ while(count<CON2_LENGTH)
 	}*/
 
 }
-unsigned char find(unsigned int *rdat,unsigned int source)
-{
-	unsigned char b=0,temp;
-	temp=Quest_len_int(rdat);
-	if (rdat[DELAY-9]!=0&&0==temp)
-	temp=DELAY-1;
-	for (unsigned char a=0;a<=temp;a++)
-	{if(rdat[a]==source)return 1;}
-		
-	return 0;
-}
+
 
 void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 {
@@ -384,9 +393,9 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 void addto4(unsigned int Num)
 {
 	volatile  char b;
-	for(b=0;b<(DELAY-11);b++)
-	rdata4[b]=rdata4[b+1];
-	rdata4[DELAY-11]=Num;
+	for(b=Quest_len_int(rdata4);b<(DELAY-1);b++)
+	rdata4[b+1]=rdata4[b];
+	rdata4[Quest_len_int(rdata4)]=Num;
 }
 
 void Judge(void)//传入一个接收到的rxdata数组 这个数组依次和前一个比较结果存到类似   05 51  这样的结果中第五位为51
@@ -521,32 +530,30 @@ Bcast[5]=Num;}*/
 void sendcast(void)
 {
 	if(Bcast[0][0]!=0)qingling(Bcast[0],3);
-	m_count++;m_freedelay++;
-	if(m_count<10)return;
-	if(rdata1[0]==0)
-	for(int a=0;a<6;a++)//开始1分钟不报
-	{Bcast[a][0]=0;Bcast[a][1]=0;Bcast[a][2]=0;}
-	if (m_freedelay>60)
-		{
-			add2Bcast(0,0,254);//正定 3分钟一次
-			m_freedelay=0;
-		}
+	m_count++;
+	//if(m_count<10)return;
+	//if(rdata1[0]==0)
+	//for(int a=0;a<6;a++)//开始1分钟不报
+	//{Bcast[a][0]=0;Bcast[a][1]=0;Bcast[a][2]=0;}
+	
 	volatile unsigned char b=0;
 	if(Bcast[5][2]!=0)
 	{
 	m_freedelay=0;
-	
 	LED_ON
 	b=send_int(Bcast[5][0],Bcast[5][1],Bcast[5][2]);
 	_delay_ms(10);
 	if(b)
 	{
 	if(!resflag)
-	{uart_sendB1(0xff);
+	{
+	_delay_ms(500);
+	uart_sendB1(0xff);
 	uart_sendB1(Bcast[5][0]);
 	uart_sendB1(Bcast[5][1]);
 	uart_sendB1(Bcast[5][2]);
-	uart_sendB1(0xff);	}
+	uart_sendB1(0xff);
+	_delay_ms(500);	}
 	uart_sendB(Bcast[5][0]);
 	uart_sendB(Bcast[5][1]);
 	uart_sendB(Bcast[5][2]);
@@ -563,7 +570,11 @@ void sendcast(void)
 	_delay_ms(100);
 	LED_OFF
 	}
-
+	if (m_freedelay>=2)
+	{
+		add2Bcast(0,0,254);//正定 3分钟一次
+		m_freedelay=0;
+	}
 }
 
 
@@ -581,18 +592,31 @@ void setsleep(void)
 	SMCR|=(1<<SE);	
 }
 int signalflag = 0;
+#define count_times 6
+int six_second = count_times;
 ISR(TIMER1_OVF_vect)
 {
-	if (READ_PA3==0)
-	_PA3=1;
+if(six_second == 0)
+{
+	if (READ_PA5==0)
+	_PA5=1;
 	else 
-	_PA3=0;
-	if(signalflag == 1)
-	{uart_sendB1(0x33);
-	_delay_ms(1000);}
+	_PA5=0;
 	uart_sendB1(0x33);
-	signalflag=1;
+	if(signalflag == 1)
+	{
+	_delay_ms(1000);
+	{uart_sendB1(0xff);
+		uart_sendB1(0xDD);
+		uart_sendB1(0x00);
+		uart_sendB1(0xfe);
+	uart_sendB1(0xff);	}
+	}
 	
+	signalflag=1;
+	six_second = count_times;
+}
+six_second--;
 	//resflag++;
 	//重启无线模块
 }
@@ -603,7 +627,7 @@ ISR(USART1_RX_vect)
 	
 	if(UCSR1A & (1<<RXC1))
 	temp=UDR1;
-	if(temp==0x30)wdt_enable(WDTO_8S);
+	if(temp==0x30){wdt_enable(WDTO_8S);uart_sendB1(0x33);}
 	if(temp==0x33)
 	if(resflag==1)resflag=0;//wdt_reset();
 	else resflag=1;
@@ -612,7 +636,11 @@ int rxflag=0,succflag=0,count=0,resetflag=0;
 ISR(USART0_RX_vect)
 {	
 	int temp,a=0,b=0;
-	
+
+	if (READ_PA1==0)
+	_PA1=1;
+	else
+	_PA1=0;
 	if(UCSR0A & (1<<RXC0))
 	temp=UDR0;
 	if(temp==0x01)succflag=1;
@@ -754,7 +782,7 @@ ISR(USART0_RX_vect)
 	 rx0x11=0;	 
 	 count=-1;
 	 succflag=0;
-	 LED_OFF
+	
 	 
 	 for (a=0;a<=count;a++)
 	rdatatemp[a]=0;
@@ -772,17 +800,18 @@ ISR(USART0_RX_vect)
 	 else rxflag=0;
 	 count++;
 	 //辨别终止位
-	 }	 
+	 }	
+	// LED_OFF 
 }
 
 
-
+int m_value=0,mcount1=0,scount = 0,m_flag = 0;
 unsigned char DoWithTiaoJian(unsigned int *rdat)//左1右0
 {
 	volatile unsigned char a,b,c=0,DoWithCount=1,DoWithvalue=0;
 	for (a=1;a<LENGTH;a++)
 		for ( b=0;b<7;b++)
-			for (c=0;c<150;c++)
+			for (c=0;c<250;c++)
 				if (x_middle[a][b]==rdat[c]&&x_middle[a][b]!=0)//reserve条件成立
 					{
 					if(b==0&&find(rdata3,x_left[a][0])&&find(rdata3,x_left[a][1])&&find(rdata3,x_left[a][2])
@@ -808,7 +837,7 @@ unsigned char DoWithTiaoJian(unsigned int *rdat)//左1右0
 	
 	if (DoWithCount>1)
 	{
-		for (a=1;a<40;a++)
+		/*for (a=1;a<40;a++)
 			if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]&&DoWithArray[a*2]==DoWithArray[a*2+10]&&DoWithArray[a*2]==DoWithArray[a*2+12]
 			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
 			{DoWithS[DoWithvalue].howmany=7;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
@@ -827,7 +856,34 @@ unsigned char DoWithTiaoJian(unsigned int *rdat)//左1右0
 				DoWithS[DoWithvalue].what=DoWithArray[a*2];
 				DoWithS[DoWithvalue].howmany=3;
 				DoWithvalue++;
+				}*/
+		scount = 0;
+		for (a=1;a<40;a++)
+		  if(DoWithArray[a*2]!=0)
+			{if(DoWithArray[a*2] == m_value)
+				{mcount1++;
+					if(mcount1 == 1)
+					if(DoWithArray[a*2-1]==DoWithArray[a*2-3])
+					m_flag = 1;
 				}
+					
+			else 
+			{
+				if(mcount1>=2&&m_flag == 0){//添加到dowiths
+					//if(mcount1!=2||!(DoWithArray[a*2-1]==DoWithArray[a*2-3]==DoWithArray[a*2-5]))
+					{DoWithS[scount].howmany = mcount1+1;
+					DoWithS[scount++].what = m_value;
+					m_value = DoWithArray[a*2];
+					mcount1 = 0;m_flag = 0;}
+					
+				}
+				else
+				{mcount1 = 0;m_flag = 0; //init mcount1
+				m_value = DoWithArray[a*2];}
+			}
+			}
+		  	
+			
 	}
 }
 int DupliDoWith(int x,int y)
@@ -853,7 +909,7 @@ void rx12(void)
 				{
 					if (tempNum&0x8000)
 					{
-						for (b=0;b<150;b++)
+						for (b=0;b<250;b++)
 						{
 						if(((tempNum&0x0fff)+1)==rdata3[b])
 						c=1;
@@ -904,19 +960,13 @@ while(o_count<CON2_LENGTH)
 	{
 	
 		if(DEVIDE<o_count)break;//前45个条件
-		if(find(rdata3,conditon2[o_count][0])&&find(rdata3,conditon2[o_count][1])&&find(rdata3,conditon2[o_count][2]))//上下行边上
+		if(find(rdata3,conditon2[o_count][0])
+		&&find(rdata3,conditon2[o_count][1])
+		&&find(rdata3,conditon2[o_count][2]))//上下行边上
 		n=1;
 		else n=0;   
 		//头一个为不符合条件选项
-		/*if(pthis->con[0]!=255)
-		{
-		b=0;
-			for(a=0;a<DELAY;a++)
-			{
-			{b|=(rdata3[a]==pthis->con[0]);}
-			}
- 		if(b==1)n=0;
-		}*/
+		
 
 		//////////////////////成功//1进来factor1=0通过
 		if(n==1)
@@ -956,6 +1006,10 @@ while(o_count<CON2_LENGTH)
 				
 				if (conditon2[o_count][3]==0&&DoWithS[a].howmany!=6)
 				{
+					
+				{
+						
+					
 				//        不亮则通过                    //
 			//	if(find(rdata3,signal[1])&&o_count==1&&(DoWithS[a].howmany!=5||find(rdata3,signal[3])))//非红灯//调车
 			//  if(!find(rdata3,signal[3])||o_count!=3||(DoWithS[a].howmany==5&&!find(rdata3,signal[1])))//非红灯
@@ -979,7 +1033,7 @@ while(o_count<CON2_LENGTH)
 							tempa+=140;
 						
 					    tempa+=DoWithS[a].what;
-						
+						//tempa=142
 						//tempa+=50;
 					
 						if(tempa<=100/*&&o_count==1*/)
@@ -1002,15 +1056,15 @@ while(o_count<CON2_LENGTH)
 								factor[e].howmany=factor[o_count].howmany;
 							}
 				
-					//}
+					}
 				}
 				if (conditon2[o_count][3]==1&&DoWithS[a].howmany!=6)
 				{
 				//		4 1 1	5 1 0	3 1 0
 				//		4 2 0	5 2 1	3 2 1
-				
+					
 				//if(!find(rdata3,signal[3])||o_count!=3||(DoWithS[a].howmany==5&&!find(rdata3,signal[1])))//非红灯
-				//	{
+					{
 					
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
@@ -1050,7 +1104,7 @@ while(o_count<CON2_LENGTH)
 						if(factor[e].what==factor[o_count].what)
 						factor[e].howmany=factor[o_count].howmany;
 					}
-					//}
+					}
 				}
 				}	
 			}						
@@ -1063,6 +1117,13 @@ while(o_count<CON2_LENGTH)
 	
 	o_count++;
 	}
+}
+void send_to_server(unsigned char *source,unsigned int len)
+{
+	unsigned int i = 0;
+	for(i=0;i<len;i++)
+		uart_sendB1(source[i]);
+	
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1178,10 +1239,10 @@ uart_sendB1(0x33);
 	{
 		head=hei[1];
 	}
-	if (sendcastflag==1)
+	//if (sendcastflag==1)
 	{
-		sendcast();
-		sendcastflag=0;
+		
+		//sendcastflag=0;
 	}
 	if (rdatacache[0][0]!=0&&rdata[0]==0)
 	{
@@ -1212,11 +1273,15 @@ uart_sendB1(0x33);
 	}
 	if (rdata[1]==0x11&&rx0x11==0)
 	{
-
+			_delay_ms(200);
+			send_to_server(rdata,432);
+			_delay_ms(500);
 			Judge();
 			rx0x11=1;
+			m_freedelay++;
 			searchF();
 			searchL();
+			sendcast();
 	}
 	if (rdata3[10]==0)
 	{
@@ -1225,11 +1290,13 @@ uart_sendB1(0x33);
 	if (rdata[1]==0x12&&rx0x12==0)
 	{
 	
+	send_to_server(rdata,11);
+	
 	rx12();
 	rx0x12=1;
 	searchF();
 	searchL();
-	
+	sendcast();
 //	sendcast();
 	}
 	

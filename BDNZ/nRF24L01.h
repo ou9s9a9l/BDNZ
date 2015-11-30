@@ -28,8 +28,8 @@ Note        : None
 #define FIXED_PACKET_LEN    32//Packet size in fixed size mode
 #define REPEAT_CNT          15//0-15, repeat transmit count
 #define REPEAT_TIME			2000//250, 500, 750......4000
-#define INIT_ADDR           0X99, 0X88, 0X21, 0X36, 0XAB
-#define INIT_ADDR1           0X11, 0X22, 0X33, 0X44, 0X55
+#define INIT_ADDR1          0X11, 0X22, 0X33, 0X44, 0X56
+#define INIT_ADDR           0X11, 0X22, 0X33, 0X44, 0X56
 #define INIT_ADDR2           0X66
 #define CHOICE      1
 extern void Init_MCU(void);

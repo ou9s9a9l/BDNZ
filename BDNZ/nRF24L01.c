@@ -18,6 +18,7 @@ Note        : None
 #include <avr/io.h>
 #include "nRF24L01_Reg.h"
 #include "macr.h"
+#include "define.h"
 typedef unsigned char  INT8U;
 typedef signed   char  INT8S;
 typedef unsigned int   INT16U;
@@ -62,8 +63,8 @@ void Init_MCU(void)
 	 DDRC=0XFF;               //数码管段控制
 	 PORTC=0Xff;             
 	 
-	// DDRD=0Xfc;               //键盘接口
-    // PORTD=0XFf;   
+//	 DDRD=0Xfc;               //键盘接口
+ //    PORTD=0XFf;   
 	             //锁存关闭LED显
 	
 	
@@ -569,6 +570,7 @@ Input : None
 Output: None
 ================================================================================
 */
+extern Init_Para para;
 void L01_Init( void )
 {
     unsigned char addr[5] = {INIT_ADDR};
@@ -592,7 +594,7 @@ void L01_Init( void )
 #endif//DYNAMIC_PACKET
 
     L01_WriteSingleReg( L01REG_CONFIG,/* ( 1<<MASK_TX_DS ) |*////receive interrupt
-                                      ( 1<<EN_CRC ) );     //Enable CRC, 1 byte
+                        ( 1<<CRCO )| ( 1<<EN_CRC ) );     //Enable CRC, 1 byte( 1<<CRCO )|
     L01_WriteSingleReg( L01REG_EN_AA, ( 1<<ENAA_P0 )|( 1<<ENAA_P1 )|( 1<<ENAA_P2 ) );   //Auto ack in pipe 0
     L01_WriteSingleReg( L01REG_EN_RXADDR, ( 1<<ERX_P0 )|( 1<<ERX_P1 )|( 1<<ERX_P2 ) );//Enable pipe 0 receive
     L01_WriteSingleReg( L01REG_SETUP_AW, AW_5BYTES );     //Address width : 5Byte
@@ -609,13 +611,16 @@ void L01_Init( void )
 //	a=L01_ReadSingleReg(L01REG_RX_ADDR_P2);
 	L01_SetPowerUp( );
 	a=L01_ReadSingleReg(L01REG_RF_SETUP);
-	irq=0;
+ 	irq=0;
 }
-unsigned char send_int(unsigned char Num1,unsigned char Num2,unsigned char Num3)
+	extern unsigned char rxbuffer[32];
+	
+unsigned char trx = 0;//0 rx 1 tx
+unsigned char send_int(unsigned char *testbuffer)
 {
 	
-unsigned char testbuffer[6]={"123"};
-unsigned int itmp;
+trx = 1;
+volatile unsigned char itmp=0;
 volatile unsigned char tmp=0;
 
       /*      itmp = tx_couter;
@@ -629,47 +634,63 @@ volatile unsigned char tmp=0;
             itmp %= 10;
             testbuffer[4] = itmp + '0'-16;
             testbuffer[5] = 0;*/
-	  testbuffer[0]=Num1 ;
-	  testbuffer[1]=Num2 ;
-	  testbuffer[2]=Num3 ;
+	while(testbuffer[itmp++]!=0);
+	if(itmp>32)itmp=32;
 	  L01_CE_LOW( );
 	  L01_Init();
 	  L01_SetTRMode(TX_MODE );
 	  L01_WriteHoppingPoint( 0 );
 		L01_FlushRX( );
         L01_FlushTX( );
-        L01_WriteTXPayload_Ack(testbuffer,5);//(INT8U*)"len", strlen( "len" )
+        L01_WriteTXPayload_Ack(testbuffer,itmp);//(INT8U*)"len", strlen( "len" )
         L01_CE_HIGH( );	// CE = 1,启动发射
-		_delay_ms(10);
-	   //while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
-
+			while( irq_P==1 );
+	   while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
+//_delay_ms(10);
 
 
 	 if( tmp & ( 1<<MASK_TX_DS ) )
         {
 		 L01_CE_LOW( );
-		L01_ClearIRQ(112);
-		return 1;
+		L01_ClearIRQ(IRQ_ALL);
+		itmp=1;
+		
         }
         else if( tmp & ( 1<<MASK_MAX_RT ) )
         {
 		 L01_CE_LOW( );
-		L01_ClearIRQ(112);
-		return 0;
+		L01_ClearIRQ(IRQ_ALL);
+		itmp=0;
+		
         }
-        else if( tmp & ( 1<<MASK_RX_DR )  )
+         if( tmp & ( 1<<MASK_RX_DR )  )
         {
-			
+			for( tmp = 0; tmp < 32; tmp ++ )
+		{
+			rxbuffer[tmp] = 0;
+		}
+		tmp = L01_ReadRXPayload( rxbuffer );
+		L01_ClearIRQ( IRQ_ALL );
+		if(_PB0==1)
+		_PB0 = 0;//green
+		else
+		_PB0 = 1;
+		return tmp;
 	
         }
 		
         L01_CE_LOW( );	// 发射完毕，CE = 0，省电
-	L01_ClearIRQ(112);
+	L01_ClearIRQ(IRQ_ALL);
 	  L01_CE_LOW( );	// 发射完毕，CE = 0，省电
+	  
+	  	L01_SetTRMode(RX_MODE );
+	  	L01_CE_HIGH( );
+		trx = 0;
+		return itmp;
 
 }
 
-	extern unsigned char rxbuffer[32];
+
 	
 
 	unsigned char rxdata(void)
@@ -677,15 +698,11 @@ volatile unsigned char tmp=0;
 	unsigned char testbuffer[5]={"123"};
 	int tem,tmp;
 	//		TIMSK&=~(1<<TOIE2);
-	L01_CE_LOW( );
-	L01_Init();
-	L01_SetTRMode( RX_MODE );
-	L01_WriteHoppingPoint( 0 );
 	
-	L01_FlushRX( );
-	L01_FlushTX( );
-	L01_CE_HIGH( );	// CE = 1,启动发射
-	//		while( irq_P==1 );
+	
+
+	a=L01_ReadSingleReg( L01REG_FIFO_STATUS );
+	while( irq_P==1 );
 	while( ( tmp = L01_ReadIRQSource( ) ) == 0 );//itcmp>=10且brk=0时跳出
 	L01_CE_LOW( );
 
@@ -705,15 +722,16 @@ volatile unsigned char tmp=0;
 			rxbuffer[tmp] = 0;
 		}
 		tmp = L01_ReadRXPayload( rxbuffer );
-
+		L01_ClearIRQ( IRQ_ALL );
+		return tmp;
 		
 	}
 	//		itcmp=L01_ReadSingleReg(0x09);
 	L01_ClearIRQ( IRQ_ALL );
-	uart_sendB(rxbuffer[0]);
+	
 	//   tem=(rxbuffer[2]-32)*100+(rxbuffer[3]-32)*10+rxbuffer[4]-32;
-	tem=rxbuffer[4];
-	return tem;
+	
+
 
 }
 /*

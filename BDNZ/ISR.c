@@ -99,9 +99,9 @@ void handle_data(unsigned char temp)
 			
 			
 			m_save=CRC1(rdatatemp,count-2);
-			m_crc=rdatatemp[count-2];
+			m_crc=rdatatemp[count-1];////////////12 27¸Ä
 			m_crc<<=8;
-			m_crc|=rdatatemp[count-1];
+			m_crc|=rdatatemp[count-2];
 			if(m_save!=m_crc||m_crc==0)
 			{
 				for (a=0;a<=count;a++)
@@ -110,7 +110,7 @@ void handle_data(unsigned char temp)
 			
 			#if SELECT==2006||SELECT==2010						   //????zyz
 			
-			if(rdatatemp[1]==0x11)
+			if(rdatatemp[0]==0x01)
 			for ( a=0;a<=count;a++)
 			rdata[a]=rdatatemp[a];
 

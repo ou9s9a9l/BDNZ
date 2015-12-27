@@ -60,9 +60,9 @@ void Init_MCU(void)
 	 DDRB=0XFf;             
      PORTB=0XFF;              //数码管位控制
 	 
-	 DDRC=0XFF;               //数码管段控制
+	 DDRC=0XBF;               //数码管段控制
 	 PORTC=0Xff;             
-	 
+	 //DDR_PC6 = 0;
 //	 DDRD=0Xfc;               //键盘接口
  //    PORTD=0XFf;   
 	             //锁存关闭LED显
@@ -635,6 +635,7 @@ volatile unsigned char tmp=0;
             testbuffer[4] = itmp + '0'-16;
             testbuffer[5] = 0;*/
 	while(testbuffer[itmp++]!=0);
+	itmp--;
 	if(itmp>32)itmp=32;
 	  L01_CE_LOW( );
 	  L01_Init();

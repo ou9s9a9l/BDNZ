@@ -87,7 +87,7 @@ void USART0_Init( void )
 	#ifdef USART0_SPEED
 	UBRR0L = USART0_SPEED;
 	#else
-	UBRR0L=35;         //35 38400 ;143 9600
+	UBRR0L=143;         //35 38400 ;143 9600
 	#endif
 	UCSR0A =(1<<U2X0);
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
@@ -218,7 +218,7 @@ ISR(TIMER1_OVF_vect)
 	if(flag_9>0)flag_9--;
 if(six_second == 0)
 {
-	send_moni(221,0);
+	send_moni(221,0,0);
 	uart_sendB1(0x33);
 	if(signalflag == 1)
 	{
@@ -244,7 +244,7 @@ ISR(USART1_RX_vect)
 	
 	if(UCSR1A & (1<<RXC1))
 	temp=UDR1;
-	if(temp==0x30){wdt_enable(WDTO_1S);uart_sendB1(0x33);}
+	if(temp==0x30){wdt_enable(WDTO_8S);uart_sendB1(0x33);}
 	if(temp==0x31){uart_sendB1(0x33);
 		if(remote_sendflag==0)
 		remote_sendflag = 1;
@@ -278,13 +278,16 @@ void read_prog(unsigned char *RamVar,unsigned char b)
 	//#endif
 	
 }
-void send_moni(unsigned char b,unsigned char c)
+void send_moni(unsigned char b,unsigned char c,unsigned char d)
 {
 	unsigned char RamVar[4][33]={0}; //定义无符号整型变量(Ram变量)
 	_PB1 = !_PB1;//red
 	m_freedelay=-1;
 	_delay_ms(15);
+	if(d==0)
 	read_prog(RamVar[0],254);
+	if(d==1)
+	read_prog(RamVar[0],253);
 	read_prog(RamVar[1],b);
 	read_prog(RamVar[2],c);
 	unsigned char k = 0;
@@ -294,7 +297,12 @@ void send_moni(unsigned char b,unsigned char c)
 			RamVar[3][k++]=RamVar[i][j];
 					
 	unsigned char flag = send_int(RamVar[3]);
-	if(flag == 0)send_int(RamVar[3]);
+	//while(!send_int(RamVar[3]));
+	/*if(flag == 0)
+	flag=send_int(RamVar[3]);
+	if(flag == 0)
+	flag=1;*/
+	
 	_delay_ms(500);
 	//_PB0 = !_PB0;//red
 }

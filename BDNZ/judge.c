@@ -25,11 +25,11 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned short Ident);
 #define DEVIDE 9
 #define ConSize 7
 
-#define Startcharlen 4
+#define Startcharlen 10
 #define SELECT 2010
 #define collectlen  3
-const unsigned short start1[collectlen]={0,122,303/*,625,770*/};
-const unsigned short last1[collectlen]={90,210,308/*,640,820*/};
+const unsigned short start1[collectlen]={0/*,625,770*/};
+const unsigned short last1[collectlen]={144/*,640,820*/};
 const unsigned short start12[collectlen]={0,975,2424/*,78,96*/};
 const unsigned short last12[collectlen]={640,1515,2464/*,80,103*/};
 unsigned char Quest_len_int(unsigned short *Par);

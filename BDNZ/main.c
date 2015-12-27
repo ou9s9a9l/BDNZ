@@ -15,11 +15,11 @@
  short signalflag;
  unsigned char rdatacache[cachelen+1][cachelen1];
  char rdata[size_array];
-
+extern unsigned char remote_sendflag ;
  //unsigned char rdatacache[cachelen+1][cachelen1];
   int m_freedelay;	
  unsigned short rdata3[300]={0};
- unsigned short factor[5][4];
+ extern unsigned short factor[5][4];
  void get_mcusr(void)
  {
 	 MCUSR = 0;
@@ -27,13 +27,14 @@
  }
  void test(void)
  {
-	 short t,a;
+	 short t=0,a;
 	 searchL();
 	 cache_clear();
-	 search_single(0);
-	 search_single(37);
-	 for(a=0;a<=80;a++)
-	 if(a!=0 && a!=37)
+	 t = get_len();
+	// search_single(0);
+	// search_single(11);
+	 for(a=0;a<t;a++)
+	// if(a!=0 && a!=11)
 	 search_single(a);
 	 
  }
@@ -42,19 +43,19 @@
  
 int main(void)
 { 
-
+	
 	short f = 0;
 	volatile unsigned int a,b=0,c=0,d=0,e;
 	volatile unsigned char temp;
-
+	
 	/*RamVar[1][0]=s[3][0];
 	RamVar[1][1]=s[3][1];
-	RamVar[1][2]=s[3][2];*/
-	factor[1][2] = 1084;
-	factor[2][2] = 1034;
-	factor[3][2] = 986;
-	factor[4][2] = 1038;
-
+	RamVar[1][2]=s[3][2];
+	factor[1][2] = 356;//xjg
+	factor[2][2] = 324;//sjg
+	factor[3][2] = 368;//slg
+	factor[4][2] = 352;//xlq*/
+get_len();
 		get_mcusr();
 	Init_MCU( );
 	_PC6=0;
@@ -69,7 +70,7 @@ int main(void)
 	L01_WriteHoppingPoint( 0 );
 	L01_FlushRX( );
 	L01_FlushTX( );
-
+	//send_moni(0,0,0);
 	#if TEST==2//ÁÁµÆ²âÊÔ
 	
 
@@ -126,35 +127,35 @@ int main(void)
 	unsigned char count = 0;
 	while(1)
 	{
-	if(count==255)count=0;
+	if(count==200)count=0;
 	//send_moni(254,0,count);
 	_delay_ms(100);
-	send_moni(254,0,0);
+	send_moni(count,0);
 	count++;
-	if(_PB1==1)
-	_PB1 = 0;//red
-	else
-	_PB1 = 1;
 	
 	
 	
 	
-	_delay_ms(5000);
+	_delay_ms(6000);
+	_delay_ms(6000);
 	}
 	
 	#endif
 
- // send_moni(254,0,0);
+  send_moni(0,0,1);
 
 _PB1 = 0;
 	_PB0 = 0;
 	//send_moni(142,0);
+	//send_moni(254,0);
      while(1)
  {
 	 
 	
 		if(rdata[0]!=0)
 		{
+			if(remote_sendflag == 1)
+			send_to_server(rdata,200);
 			_PB0 = !_PB0;//green
 			m_freedelay++;
 			Judge();
@@ -168,7 +169,7 @@ _PB1 = 0;
 			while(rx12()!=0&&rdatacache[0][10]==3);
 			test();
 		}
-		if(m_freedelay>=2)
+		if(m_freedelay>=120)
 		{
 			send_moni(0,0);
 			m_freedelay=0;

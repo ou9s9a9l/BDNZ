@@ -25,9 +25,9 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned short Ident);
 #define DEVIDE 9
 #define ConSize 7
 
-#define Startcharlen 10
+#define Startcharlen 4
 #define SELECT 2010
-#define collectlen  3
+#define collectlen  1
 const unsigned short start1[collectlen]={0/*,625,770*/};
 const unsigned short last1[collectlen]={144/*,640,820*/};
 const unsigned short start12[collectlen]={0,975,2424/*,78,96*/};
@@ -81,6 +81,7 @@ unsigned short rx12(void)
 	break;
 	flag_12++;
 	b--;//б┴??ио????
+	
 	for (a=0;a<rdatacache[b][Startcharlen];a++)
 	{
 		c=0;

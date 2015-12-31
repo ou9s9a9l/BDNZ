@@ -115,16 +115,17 @@ unsigned short dat3[]={
 };
 
 //***
-#define CON_LENGTH 2             //[3]counter 4[daocha]  LENGTH修改，一般不变
+#define CON_LENGTH 4             //[3]counter 4[daocha]  LENGTH修改，一般不变
 unsigned short	conditon[CON_LENGTH][5]={
 	
 	{821,204,1},//xjz-H          X进站第一个区段 IIAG-H
 	
 	{829,214,2},//sjz-H       S进站第一个区段  IIBG-H
-	
+	{819,208,1},//xjg
+	{827,218,2},//sjg
 
 	
-	//{2455,208}//1419       //区间信号点1419
+	//{2455,208}//1419       //区间信号点1419 826 818
 	
 };
  

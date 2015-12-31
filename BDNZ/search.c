@@ -46,12 +46,24 @@ void searchL(void)
 				//show_str(txt[conditon[c][1]]);//??¡À¡§
 				if(conditon[c][2] != 0)
 				{temp = factor[conditon[c][2]][0]+40;
-				if(temp != 40)
+				if(temp != 40 )
 				send_moni(conditon[c][1],temp,0);
 				else
 				{
-					if(c!=3&&c!=10)//jinzhan  yidingyao you shuzi 
-					send_moni(conditon[c][1],0,0);
+					
+					if(c!=0&&c!=1)//jinzhan  yidingyao you shuzi 
+						//send_moni(conditon[c][1],0,0);
+					if(c==2)
+						if(find(rdata3,821))//IIAG-H
+						send_moni(219,0,0);
+						else
+						send_moni(208,0,0);
+					if(c==3)
+						if(find(rdata3,829))//IIBG-H
+						send_moni(209,0,0);
+						else
+						send_moni(218,0,0);
+					
 				}
 				
 				}

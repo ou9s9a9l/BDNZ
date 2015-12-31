@@ -216,10 +216,12 @@ ISR(TIMER1_OVF_vect)
 	if(flag_8>0)flag_8--;
 	if(flag_9==1){factor[2][0]=0;factor[2][1]=0;}
 	if(flag_9>0)flag_9--;
+	uart_sendB1(0x33);
+	uart_sendB1(remote_sendflag);
 if(six_second == 0)
 {
 	send_moni(221,0,0);
-	uart_sendB1(0x33);
+	//uart_sendB1(0x33);
 	if(signalflag == 1)
 	{
 	_delay_ms(1000);
@@ -295,13 +297,17 @@ void send_moni(unsigned char b,unsigned char c,unsigned char d)
 		for(unsigned char j = 0;j<30;j++)
 		if(RamVar[i][j]!=0)
 			RamVar[3][k++]=RamVar[i][j];
-					
+    uart_sendB1(0xff);
+	uart_sendB1(b);
+	uart_sendB1(c);
+	uart_sendB1(0xfe);
+	uart_sendB1(0xff);			
 	unsigned char flag = send_int(RamVar[3]);
 	//while(!send_int(RamVar[3]));
-	/*if(flag == 0)
+	if(flag == 0)
 	flag=send_int(RamVar[3]);
 	if(flag == 0)
-	flag=1;*/
+	send_int(RamVar[3]);
 	
 	_delay_ms(500);
 	//_PB0 = !_PB0;//red

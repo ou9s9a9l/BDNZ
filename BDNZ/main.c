@@ -38,6 +38,31 @@ extern unsigned char remote_sendflag ;
 	 search_single(a);
 	 
  }
+  short Change(char s[],char bits[]);
+  char str[] = "0112140009003F006A806E00438252828D82BF02C7021F8363C003";
+  char str1[]= "0111cd006595596aa922222111417032a9e064420400824056ffc000021900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000084000100000000000000000000006a5610541044410120a20a0000080000080000080000080000080000080000080000080000080000082011802a030104000000000000000000eff51802f1730300006a56001c000000000000000000000000000000000000000050a002000000000080000000000000000000c1c703";
+ void chan(void)
+ {
+	 Change(str,rdatacache[0]);
+ }
+  void chan1(void)
+  {
+	  Change(str1,rdata);
+  }
+
+ short Change(char s[],char bits[]) {
+	 short i,n = 0;
+	 for(i = 0; s[i]; i += 2) {
+		 if(s[i] >= 'A' && s[i] <= 'F')
+		 bits[n] = s[i] - 'A' + 10;
+		 else bits[n] = s[i] - '0';
+		 if(s[i + 1] >= 'A' && s[i + 1] <= 'F')
+		 bits[n] = (bits[n] << 4) | (s[i + 1] - 'A' + 10);
+		 else bits[n] = (bits[n] << 4) | (s[i + 1] - '0');
+		 ++n;
+	 }
+	 return n;
+ }
  #define TEST 0
  
  
@@ -47,7 +72,8 @@ int main(void)
 	short f = 0;
 	volatile unsigned int a,b=0,c=0,d=0,e;
 	volatile unsigned char temp;
-	
+//	chan1();
+//	chan();
 	/*RamVar[1][0]=s[3][0];
 	RamVar[1][1]=s[3][1];
 	RamVar[1][2]=s[3][2];
@@ -142,7 +168,7 @@ get_len();
 	
 	#endif
 
-  send_moni(0,0,1);
+ // send_moni(0,0,1);
 
 _PB1 = 0;
 	_PB0 = 0;
@@ -155,7 +181,7 @@ _PB1 = 0;
 		if(rdata[0]!=0)
 		{
 			if(remote_sendflag == 1)
-			send_to_server(rdata,200);
+			send_to_server(rdata,212);
 			_PB0 = !_PB0;//green
 			m_freedelay++;
 			Judge();
@@ -166,12 +192,14 @@ _PB1 = 0;
 		{
 			//_delay_ms(10);
 			_PB0 = !_PB0;//green
+			if(remote_sendflag == 1)
+			send_to_server(rdatacache[0],cachelen1);
 			while(rx12()!=0&&rdatacache[0][10]==3);
 			test();
 		}
-		if(m_freedelay>=120)
+		if(m_freedelay>=2)
 		{
-			send_moni(0,0);
+			send_moni(0,0,0);
 			m_freedelay=0;
 		}
 	
